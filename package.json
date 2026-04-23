@@ -6,12 +6,10 @@
     "generate":         "ts-node agent/generate.ts",
     "generate:one":     "ts-node agent/generate.ts",
     "test":             "playwright test",
-    "test:headed":      "playwright test --headed",
+    "test:ui":          "playwright test --project=ui",
+    "test:api":         "playwright test --project=api",
+    "test:headed":      "playwright test --project=ui --headed",
     "test:debug":       "playwright test --debug",
-    "test:auth":        "playwright test tests/auth.spec.ts",
-    "test:premium":     "playwright test tests/premium-matrix.spec.ts",
-    "test:enrollment":  "playwright test tests/enrollment.spec.ts",
-    "test:threads":     "playwright test tests/threads.spec.ts",
     "report":           "playwright show-report",
     "allure:generate":  "allure generate allure-results --clean -o allure-report",
     "allure:open":      "allure open allure-report",
@@ -19,13 +17,13 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
-    "dotenv": "^16.4.5",
-    "passmark": "^1.0.8"
+    "dotenv":            "^16.4.5",
+    "passmark":          "^1.0.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.0",
+    "@playwright/test":  "^1.49.0",
     "allure-playwright": "^3.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "ts-node":           "^10.9.2",
+    "typescript":        "^5.4.5"
   }
 }
