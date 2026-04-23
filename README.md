@@ -72,11 +72,67 @@ FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:8085
 TEST_ADMIN_EMAIL=murali.miriyala@navitastech.com
 TEST_ADMIN_PASSWORD=Murali@123
-ANTHROPIC_API_KEY=ask_your_team_lead_for_this
-GOOGLE_GENERATIVE_AI_API_KEY=ask_your_team_lead_for_this
+ANTHROPIC_API_KEY=<your key — see below>
+GOOGLE_GENERATIVE_AI_API_KEY=<your key — see below>
 ```
 
 > ⚠️ Never commit your `.env` file. It is already in `.gitignore` so Git will ignore it automatically.
+
+---
+
+## Step 3a — Get your API Keys
+
+This project uses two AI services. You need one key from each. Both are free to obtain.
+
+---
+
+### Anthropic API Key (Claude)
+
+Used by the **agent** (`npm run generate`) and **Passmark** to control the browser.
+
+1. Go to **https://console.anthropic.com**
+2. Sign in or create a free account
+3. Click **API Keys** in the left sidebar
+4. Click **Create Key**
+5. Give it a name — e.g. `arb-automation`
+6. Copy the key — it starts with `sk-ant-...`
+7. Paste it in your `.env`:
+   ```
+   ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+   ```
+
+> ⚠️ You only see the key once. Copy it immediately before closing the page.
+
+---
+
+### Google API Key (Gemini)
+
+Used by **Passmark** for multi-model assertion — it validates test results using both Claude and Gemini together for higher accuracy.
+
+1. Go to **https://aistudio.google.com/app/apikey**
+2. Sign in with your Google account
+3. Click **Create API Key**
+4. Select **Create API key in new project**
+5. Copy the key — it starts with `AIza...`
+6. Paste it in your `.env`:
+   ```
+   GOOGLE_GENERATIVE_AI_API_KEY=AIzaxxxxxxxxxxxxxxxx
+   ```
+
+---
+
+### Your final `.env` should look like this
+
+```
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:8085
+TEST_ADMIN_EMAIL=murali.miriyala@navitastech.com
+TEST_ADMIN_PASSWORD=Murali@123
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+GOOGLE_GENERATIVE_AI_API_KEY=AIzaxxxxxxxxxxxxxxxx
+```
+
+> ⚠️ Never share your API keys with anyone. Never commit them to Git. If you accidentally push them, tell your team lead immediately so the keys can be revoked.
 
 ---
 
