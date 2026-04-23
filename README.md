@@ -105,11 +105,18 @@ arb-automation/
 │   ├── enrollment.md
 │   └── threads.md
 │
-├── tests/                     ← AUTO GENERATED — never edit these manually
-│   ├── auth.spec.ts
-│   ├── premium-matrix.spec.ts
-│   ├── enrollment.spec.ts
-│   └── threads.spec.ts
+├── tests/
+│   ├── ui/                    ← AUTO GENERATED browser tests (Passmark + Chrome)
+│   │   ├── auth.spec.ts
+│   │   ├── premium-matrix.spec.ts
+│   │   ├── enrollment.spec.ts
+│   │   └── threads.spec.ts
+│   │
+│   └── api/                   ← Pure API tests (no browser, direct HTTP)
+│       ├── auth.api.spec.ts
+│       ├── premium-matrix.api.spec.ts
+│       ├── enrollment.api.spec.ts
+│       └── threads.api.spec.ts
 │
 ├── pages/                     ← Page Object helpers (senior dev maintains)
 │   ├── BasePage.ts
@@ -120,12 +127,18 @@ arb-automation/
 │   └── auth.ts                ← Shared login and token helper
 │
 ├── agent/
-│   └── generate.ts            ← AI agent: reads stories → writes specs
+│   └── generate.ts            ← AI agent: lints stories → generates ui specs
 │
 ├── test-data/                 ← Put Excel and test files here
 │
+├── .github/
+│   ├── workflows/
+│   │   └── playwright.yml     ← CI/CD: runs on every push + PR
+│   └── ISSUE_TEMPLATE/
+│       └── bug_report.md      ← Template for reporting test failures
+│
 ├── .env.example               ← Copy this to .env and fill in values
-├── playwright.config.ts       ← Playwright settings
+├── playwright.config.ts       ← Two projects: ui + api
 └── package.json               ← All available commands
 ```
 
@@ -191,14 +204,13 @@ Members can see the correct monthly premium amounts for their health plan
 
 | Command | What it does |
 |---------|-------------|
-| `npm run generate` | Read all user stories and generate test files |
-| `npm run generate:one premium-matrix` | Generate tests for one feature only |
-| `npm test` | Run all tests in parallel |
-| `npm run test:headed` | Run tests with the browser visible on screen |
-| `npm run test:auth` | Run only authentication tests |
-| `npm run test:premium` | Run only Premium Matrix tests |
-| `npm run test:enrollment` | Run only Enrollment tests |
-| `npm run test:threads` | Run only Threads tests |
+| `npm run generate` | Lint + generate UI spec files from all user stories |
+| `npm run generate:one premium-matrix` | Generate spec for one feature only |
+| `npm test` | Run ALL tests (UI + API) in parallel |
+| `npm run test:ui` | Run browser tests only (Passmark + Chrome) |
+| `npm run test:api` | Run API tests only (no browser, fast) |
+| `npm run test:headed` | Run browser tests with Chrome visible on screen |
+| `npm run test:debug` | Run tests in debug mode step by step |
 | `npm run report` | Open the Playwright HTML report |
 | `npm run allure:report` | Generate and open the Allure dashboard |
 
@@ -325,19 +337,23 @@ CI/CD will automatically generate the spec and run it on GitHub.
 
 ## CI/CD — What Happens on GitHub
 
-Every time you push to the `main` branch:
+Every time you push to the `main` branch or raise a PR:
 
 ```
-Push → GitHub Actions starts
-     → Installs Node + browsers
-     → npm run generate (generates all specs)
-     → npm test (runs everything in parallel)
-     → Publishes HTML report as downloadable artifact
-     → Publishes Allure dashboard to GitHub Pages
+Push / PR → GitHub Actions starts
+          → Installs Node + Playwright browsers
+          → npm run generate  (lints stories + generates UI specs)
+          → npm run test:api  (runs all API tests — fast, no browser)
+          → npm run test:ui   (runs all browser tests via Passmark)
+          → Publishes HTML report as downloadable artifact
+          → Posts test summary comment on PR (✅ passed / ❌ failed)
+          → Publishes Allure dashboard to GitHub Pages (main only)
 ```
 
-You can see the results at:
-`https://github.com/Navitas-India/arb-automation/actions`
+- See CI runs: `https://github.com/Navitas-India/arb-automation/actions`
+- See Allure dashboard: `https://navitas-india.github.io/arb-automation`
+
+> ⚠️ Branch protection is enabled on `main`. You cannot push directly — you must raise a PR and get 1 approval. Tests must pass before merging.
 
 ---
 
@@ -347,7 +363,7 @@ You can see the results at:
 You forgot to create your `.env` file or the key is missing.
 ```bash
 cp .env.example .env
-# then fill in ANTHROPIC_API_KEY
+# then fill in ANTHROPIC_API_KEY — ask your team lead
 ```
 
 ### `Cannot find module 'passmark'`
@@ -356,14 +372,21 @@ Dependencies not installed.
 npm install
 ```
 
-### `Timeout — waiting for element`
-The app is not running locally. Make sure the backend (port 8085) and frontend (port 5173) are both started before running tests.
+### `Missing section: "## Negative Cases"`
+Your user story is missing a required section. The agent will not generate until fixed.
+Open the `.md` file and add the missing section — see the format above.
 
-### `401 Unauthorised on all tests`
-Your test credentials are wrong or the local server session has expired. Check `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` in your `.env`.
+### `Timeout — waiting for element`
+The app is not running locally. Make sure backend (port 8085) and frontend (port 5173) are both started.
+
+### `401 Unauthorised on all API tests`
+Test credentials are wrong or the session expired. Check `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` in your `.env`.
 
 ### `Error: net::ERR_CONNECTION_REFUSED`
-The app is not running. Start the backend and frontend first.
+The app is not running. Start backend and frontend first.
+
+### PR is blocked — cannot merge
+Either tests are failing in CI or you need 1 reviewer approval. Fix the failing tests first, then ask your team lead to review.
 
 ---
 
