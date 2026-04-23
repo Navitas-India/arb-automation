@@ -12,15 +12,16 @@ export default defineConfig({
   timeout: 60_000,
 
   reporter: [
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ['html',  { outputFolder: 'playwright-report', open: 'never' }],
     ['list'],
+    ['allure-playwright', { resultsDir: 'allure-results' }],
   ],
 
   use: {
-    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    baseURL:       process.env.FRONTEND_URL || 'http://localhost:5173',
+    trace:         'on-first-retry',
+    screenshot:    'only-on-failure',
+    video:         'on-first-retry',
     actionTimeout: 15_000,
   },
 
