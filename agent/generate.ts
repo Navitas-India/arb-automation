@@ -70,11 +70,10 @@ async function generateSpec(storyFile: string): Promise<void> {
   const storyPath = path.join(STORIES, storyFile);
   const storyName = storyFile.replace('.md', '');
   const outPath   = path.join(TESTS, `${storyName}.spec.ts`);
-
-  const story = fs.readFileSync(storyPath, 'utf-8');
+  const content   = fs.readFileSync(storyPath, 'utf-8');
 
   // ── Lint first ──────────────────────────────────────────────────────────
-  const errors = lintStory(story, storyFile);
+  const errors = lintStory(content, storyFile);
   if (errors.length > 0) {
     console.log(`\n❌  ${storyFile} has errors — fix before generating:\n`);
     errors.forEach(e => console.log(`     • ${e}`));
@@ -91,12 +90,11 @@ async function generateSpec(storyFile: string): Promise<void> {
     system:     SYSTEM,
     messages: [{
       role:    'user',
-      content: `Generate a Playwright spec file for this user story:\n\n${story}`,
+      content: `Generate a Playwright spec file for this user story:\n\n${content}`,
     }],
   });
 
-  const code = (response.content[0] as { type: string; text: string }).text.trim();
-
+  const code  = (response.content[0] as { type: string; text: string }).text.trim();
   const clean = code
     .replace(/^```typescript\n?/, '')
     .replace(/^```ts\n?/, '')
