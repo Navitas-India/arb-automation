@@ -106,7 +106,7 @@ arb-automation/
 │   └── threads.md
 │
 ├── tests/
-│   ├── ui/                    ← AUTO GENERATED browser tests (Passmark + Chrome)
+│   ├── ui/                    ← AUTO GENERATED browser tests (Playwright + Chrome)
 │   │   ├── auth.spec.ts
 │   │   ├── premium-matrix.spec.ts
 │   │   ├── enrollment.spec.ts
@@ -207,7 +207,7 @@ Members can see the correct monthly premium amounts for their health plan
 | `npm run generate` | Lint + generate UI spec files from all user stories |
 | `npm run generate:one premium-matrix` | Generate spec for one feature only |
 | `npm test` | Run ALL tests (UI + API) in parallel |
-| `npm run test:ui` | Run browser tests only (Passmark + Chrome) |
+| `npm run test:ui` | Run browser tests only (Playwright + Chrome) |
 | `npm run test:api` | Run API tests only (no browser, fast) |
 | `npm run test:headed` | Run browser tests with Chrome visible on screen |
 | `npm run test:debug` | Run tests in debug mode step by step |
@@ -341,7 +341,7 @@ Push / PR → GitHub Actions starts
           → Installs Node + Playwright browsers
           → npm run generate  (lints stories + generates UI specs)
           → npm run test:api  (runs all API tests — fast, no browser)
-          → npm run test:ui   (runs all browser tests via Passmark)
+          → npm run test:ui   (runs all browser tests via Playwright)
           → Publishes HTML report as downloadable artifact
           → Posts test summary comment on PR (✅ passed / ❌ failed)
           → Publishes Allure dashboard to GitHub Pages (main only)
@@ -361,12 +361,6 @@ You forgot to create your `.env` file or the key is missing.
 ```bash
 cp .env.example .env
 # then fill in ANTHROPIC_API_KEY — ask your team lead
-```
-
-### `Cannot find module 'passmark'`
-Dependencies not installed.
-```bash
-npm install
 ```
 
 ### `Missing section: "## Negative Cases"`
