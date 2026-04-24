@@ -1,7 +1,7 @@
 # ARB Automation
 
-> AI-powered test automation for the ARBenefits Member Portal.
-> Built with [Playwright](https://playwright.dev) + [Passmark](https://github.com/bug0inc/passmark).
+> Playwright test automation for the ARBenefits Member Portal.
+> Built with [Playwright](https://playwright.dev) — UI tests + API tests, zero ongoing AI cost.
 
 ---
 
@@ -47,7 +47,7 @@ cd arb-automation
 npm install
 ```
 
-This installs Playwright, Passmark, and everything else the project needs.
+This installs Playwright and everything else the project needs.
 
 Then install the browsers Playwright uses:
 
@@ -267,23 +267,20 @@ This opens a browser with screenshots, videos, and step-by-step details of every
 
 ---
 
-## Understanding Passmark (How AI Controls the Browser)
+## How Tests Work
 
-When you write a step like:
+**UI tests** — Playwright opens a real Chrome browser, navigates, clicks, fills forms and checks results. No AI involved during test execution. Zero cost to run.
+
+**API tests** — Playwright sends HTTP requests directly to the backend. No browser. Fastest and cheapest tests.
+
+**Agent** (`npm run generate`) — Claude reads your user story once and writes the test code. This is the only time AI is used. Cost is minimal (~$0.05 per story). After that, running the tests costs nothing.
 
 ```
-{ description: "Login with admin email and password" }
+Cost breakdown:
+npm run generate  → Claude API called once per story  → ~$0.05
+npm run test:api  → No AI, pure HTTP                  → FREE
+npm run test:ui   → No AI, pure Playwright browser    → FREE
 ```
-
-Passmark sends this to Claude (AI). Claude looks at the real browser screen, finds the email field and password field, types the credentials, and clicks Sign In — exactly like a human would.
-
-You never write CSS selectors or element IDs. You just describe what a human would do.
-
-**First run** — AI executes every step (takes 10–30 seconds per test)
-
-**Repeat runs** — steps are cached (runs in 2–3 seconds per test)
-
-**If the UI changes** — cached steps auto-heal by asking AI to find the new location
 
 ---
 
