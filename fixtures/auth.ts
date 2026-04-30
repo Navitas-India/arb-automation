@@ -1,7 +1,7 @@
 export const TEST_USERS = {
   admin: {
-    email:    process.env.TEST_ADMIN_EMAIL    || 'murali.miriyala@navitastech.com',
-    password: process.env.TEST_ADMIN_PASSWORD || 'Murali@123',
+    email:    process.env.TEST_ADMIN_EMAIL,
+    password: process.env.TEST_ADMIN_PASSWORD,
   },
 };
 
