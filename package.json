@@ -1,29 +1,43 @@
 {
   "name": "arb-automation",
   "version": "1.0.0",
-  "description": "AI-powered Playwright test automation for ARBenefits Member Portal using Passmark",
+  "description": "AI-powered Playwright test automation for ARBenefits Member Portal",
   "scripts": {
-    "generate":         "ts-node agent/generate.ts",
-    "generate:one":     "ts-node agent/generate.ts",
-    "test":             "playwright test",
-    "test:ui":          "playwright test --project=ui",
-    "test:api":         "playwright test --project=api",
-    "test:headed":      "playwright test --project=ui --headed",
-    "test:debug":       "playwright test --debug",
-    "report":           "playwright show-report",
-    "allure:generate":  "allure generate allure-results --clean -o allure-report",
-    "allure:open":      "allure open allure-report",
-    "allure:report":    "npm run allure:generate && npm run allure:open"
+    "generate": "npm run generate:api && npm run generate:ui",
+    "generate:ui": "ts-node agent/generate-ui.ts",
+    "generate:api": "ts-node agent/generate-api.ts",
+    "api:cycle": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/api-cycle.ps1",
+    "generate:one": "ts-node agent/generate-ui.ts",
+    "test:raw": "playwright test",
+    "test:ui:raw": "playwright test --project=ui",
+    "test:api:raw": "playwright test --project=api",
+    "test": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-api-and-open-allure.ps1",
+    "test:ui": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-with-report.ps1 -Project ui",
+    "test:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-api-and-open-allure.ps1",
+    "test:api:module": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-api-and-open-allure.ps1 -Modules",
+    "test:headed": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-with-report.ps1 -Project ui -- --headed",
+    "test:debug": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-with-report.ps1 -- --debug",
+    "report": "npm run report:latest",
+    "report:latest": "npm run allure:generate:run -- -NoArchive && npm run allure:open",
+    "report:archive": "npm run allure:generate:run && npm run allure:open:latest",
+    "report:playwright": "playwright show-report",
+    "allure:generate": "allure generate artifacts/reports/allure/results/latest --clean -o artifacts/reports/allure/latest",
+    "allure:open": "allure open artifacts/reports/allure/latest",
+    "allure:generate:run": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/allure-generate-run.ps1",
+    "allure:open:latest": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/allure-open-latest.ps1",
+    "allure:open:run": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/allure-open-latest.ps1 -RunId",
+    "allure:runs:list": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/allure-open-latest.ps1 -ListRuns",
+    "allure:report": "npm run report:archive"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
-    "dotenv":            "^16.4.5",
-    "passmark":          "^1.0.8"
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "@playwright/test":  "^1.49.0",
+    "@playwright/test": "^1.49.0",
     "allure-playwright": "^3.0.0",
-    "ts-node":           "^10.9.2",
-    "typescript":        "^5.4.5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }

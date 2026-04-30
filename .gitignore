@@ -5,3 +5,13 @@ playwright-report/
 test-results/
 *.png
 *.zip
+allure-report/
+allure-reports/
+allure-report-*/
+
+.allure-*
+
+.allure-latest
+allure-results/
+artifacts/reports/allure/
+logs/

@@ -1,411 +1,268 @@
 # ARB Automation
 
-> AI-powered test automation for the ARBenefits Member Portal.
-> Built with [Playwright](https://playwright.dev) + [Passmark](https://github.com/bug0inc/passmark).
+AI-assisted Playwright automation for ARBenefits, with markdown-driven spec generation for API and UI tests.
 
----
+## Why This Repository Exists
 
-## What is this project?
+This repository is designed to move test intent out of ad-hoc handwritten specs and into maintainable story documents.
 
-This project automatically tests the ARBenefits portal — the healthcare benefits system used by Arkansas state employees.
+- Product and QA intent is captured in markdown under `user-stories/`.
+- Generator logic stays generic in `agent/`.
+- Module-specific behavior (endpoints, status compatibility, data fixtures) stays in story contracts.
+- Generated tests are treated as outputs, not primary authoring sources.
 
-You do **not** write code to test the app. You write **plain English user stories**. An AI agent reads your stories and generates the test code for you. Playwright then runs those tests against the real application.
+## Current Repository Snapshot
 
-**Your job as an intern:**
-1. Understand a feature
-2. Write a user story describing what should happen
-3. Run one command — tests are generated and executed automatically
+This README reflects the current codebase layout and scripts.
 
----
+- Active story sources: `user-stories/usermanagement.md`, `user-stories/lettersmanagement.md`
+- Active generator entrypoints:
+  - `agent/generate-api.ts`
+  - `agent/generate-ui.ts`
+  - shared core: `agent/generator-core.ts`
+- Active API specs are generated under `tests/api/<story-slug>/`
+- Allure reporting is unified under `artifacts/reports/allure/`
 
-## Before You Start
+## High-Level Architecture
 
-### What you need on your laptop
-
-| Tool | Version | How to check |
-|------|---------|--------------|
-| Node.js | 18 or higher | `node --version` |
-| npm | 9 or higher | `npm --version` |
-| Git | Any | `git --version` |
-
-If any of these are missing, ask your team lead to help you install them.
-
----
-
-## Step 1 — Clone the repo
-
-```bash
-git clone https://github.com/Navitas-India/arb-automation.git
-cd arb-automation
+```text
+Story markdown (.md) -> generator-core parsing/splitting -> mode wrapper (API/UI)
+-> LLM prompt build + validation loop -> generated Playwright spec files
+-> Playwright execution -> HTML/JSON/Allure artifacts
 ```
 
----
+Core responsibilities:
 
-## Step 2 — Install dependencies
+- `agent/generator-core.ts`: story discovery, feature section splitting, provider selection, retries, TS validation.
+- `agent/generate-api.ts`: API-specific prompting and API code validation rules.
+- `agent/generate-ui.ts`: UI-specific prompting and UI code validation rules.
+- `fixtures/auth.ts`: URLs, credentials, API auth token helper.
+- `scripts/*.ps1`: operational wrappers (`api:cycle`, module run + report open, report generation/opening, logging helper).
+
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Git
+
+Install dependencies and browser:
 
 ```bash
 npm install
-```
-
-This installs Playwright, Passmark, and everything else the project needs.
-
-Then install the browsers Playwright uses:
-
-```bash
 npx playwright install chromium
 ```
 
----
+## Environment Configuration
 
-## Step 3 — Set up your environment file
+Create a local `.env` in repo root (there is no committed `.env.example` currently):
 
-Copy the example file:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and fill in the values:
-
-```
+```env
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:8085
-TEST_ADMIN_EMAIL=murali.miriyala@navitastech.com
-TEST_ADMIN_PASSWORD=Murali@123
-ANTHROPIC_API_KEY=<your key — see below>
-GOOGLE_GENERATIVE_AI_API_KEY=<your key — see below>
+TEST_ADMIN_EMAIL=<admin email>
+TEST_ADMIN_PASSWORD=<admin password>
+ANTHROPIC_API_KEY=<optional if using Anthropic>
+GOOGLE_GENERATIVE_AI_API_KEY=<optional if using Google>
+# optional override:
+# AI_PROVIDER=google
 ```
 
-> ⚠️ Never commit your `.env` file. It is already in `.gitignore` so Git will ignore it automatically.
+Notes:
 
-
----
-
-## Step 4 — Add your test data files
-
-Place these files in the `test-data/` folder:
-
-| File | What it is |
-|------|-----------|
-| `matrix_2026.xlsx` | A valid Premium Matrix Excel file for year 2026 |
-| `invalid.pdf` | Any PDF file — used to test that the app rejects wrong formats |
-
-Ask your team lead for these files if you don't have them.
-
----
+- API token helper posts to `${BACKEND_URL}/auth/signin` using `TEST_ADMIN_*`.
+- If both AI keys are available, provider selection can be forced with `AI_PROVIDER`.
 
 ## Project Structure
 
-```
+```text
 arb-automation/
-│
-├── user-stories/              ← YOU WRITE HERE — plain English .md files
-│   ├── auth.md
-│   ├── premium-matrix.md
-│   ├── enrollment.md
-│   └── threads.md
-│
-├── tests/
-│   ├── ui/                    ← AUTO GENERATED browser tests (Passmark + Chrome)
-│   │   ├── auth.spec.ts
-│   │   ├── premium-matrix.spec.ts
-│   │   ├── enrollment.spec.ts
-│   │   └── threads.spec.ts
-│   │
-│   └── api/                   ← Pure API tests (no browser, direct HTTP)
-│       ├── auth.api.spec.ts
-│       ├── premium-matrix.api.spec.ts
-│       ├── enrollment.api.spec.ts
-│       └── threads.api.spec.ts
-│
-├── pages/                     ← Page Object helpers (senior dev maintains)
-│   ├── BasePage.ts
-│   ├── LoginPage.ts
-│   └── PremiumMatrixPage.ts
-│
-├── fixtures/
-│   └── auth.ts                ← Shared login and token helper
-│
 ├── agent/
-│   └── generate.ts            ← AI agent: lints stories → generates ui specs
-│
-├── test-data/                 ← Put Excel and test files here
-│
-├── .github/
-│   ├── workflows/
-│   │   └── playwright.yml     ← CI/CD: runs on every push + PR
-│   └── ISSUE_TEMPLATE/
-│       └── bug_report.md      ← Template for reporting test failures
-│
-├── .env.example               ← Copy this to .env and fill in values
-├── playwright.config.ts       ← Two projects: ui + api
-└── package.json               ← All available commands
+│   ├── generate-api.ts
+│   ├── generate-ui.ts
+│   ├── generator-core.ts
+│   └── GENERATOR_MODES.md
+├── docs/
+│   ├── guidelines-md-preparation.md
+│   └── guidelines-rule-placement.md
+├── fixtures/
+│   ├── auth.ts
+│   └── synthetic.ts
+├── pages/
+│   ├── BasePage.ts
+│   └── LoginPage.ts
+├── scripts/
+│   ├── api-cycle.ps1
+│   ├── allure-generate-run.ps1
+│   ├── allure-open-latest.ps1
+│   ├── run-api-and-open-allure.ps1
+│   └── test-with-report.ps1
+├── tests/
+│   └── api/
+├── user-stories/
+│   ├── usermanagement.md
+│   └── lettersmanagement.md
+├── playwright.config.ts
+└── package.json
 ```
 
----
+## Generation Workflow
 
-## How to Write a User Story
+The generator reads markdown stories and emits Playwright specs.
 
-User stories live in the `user-stories/` folder. Each feature has its own `.md` file.
+- API mode writes to `tests/api/<story-slug>/*.api.spec.ts`
+- UI mode writes to `tests/ui/*.spec.ts` (when UI generation is used)
 
-Every user story must follow this format exactly:
+Common usage:
 
-```markdown
-# Feature Name
-
-## As
-Who is using this feature
-
-## I want to
-What action they want to perform
-
-## So that
-Why they are doing it / what the outcome is
-
-## Acceptance Criteria
-- What should happen when everything goes right
-- List each expected outcome as a bullet point
-
-## Negative Cases
-- What should happen when something goes wrong
-- Wrong input → expected error
-- Missing auth → expected HTTP status
-```
-
-### Real example
-
-```markdown
-# Premium Matrix Upload
-
-## As
-An EBD Staff member (Administrator)
-
-## I want to
-Upload a Premium Matrix Excel file for a specific plan year
-
-## So that
-Members can see the correct monthly premium amounts for their health plan
-
-## Acceptance Criteria
-- I can navigate to the Premium Matrix section after logging in
-- I can upload a valid Excel file and select the plan year
-- After clicking Upload I see a success confirmation
-- The uploaded data is visible in the table when I filter by that year
-
-## Negative Cases
-- Upload without logging in → 401 Unauthorised
-- Upload a PDF or non-Excel file → validation error about file format
-- Upload with mismatched year → year mismatch error
-```
-
----
-
-## Available Commands
-
-| Command | What it does |
-|---------|-------------|
-| `npm run generate` | Lint + generate UI spec files from all user stories |
-| `npm run generate:one premium-matrix` | Generate spec for one feature only |
-| `npm test` | Run ALL tests (UI + API) in parallel |
-| `npm run test:ui` | Run browser tests only (Passmark + Chrome) |
-| `npm run test:api` | Run API tests only (no browser, fast) |
-| `npm run test:headed` | Run browser tests with Chrome visible on screen |
-| `npm run test:debug` | Run tests in debug mode step by step |
-| `npm run report` | Open the Playwright HTML report |
-| `npm run allure:report` | Generate and open the Allure dashboard |
-
----
-
-## Your Daily Workflow
-
-```
-1. Pull latest changes
-   git pull origin main
-
-2. Write or update a user story
-   Edit a file in user-stories/
-
-3. Generate the test
-   npm run generate
-
-4. Run the tests
-   npm test
-
-5. Check the results
-   npm run report
-
-6. Push your user story
-   git add user-stories/your-file.md
-   git commit -m "add user story: [feature name]"
-   git push
-```
-
-> ⚠️ Never push files from the `tests/` folder. Those are auto-generated and will be recreated by the agent.
-
----
-
-## Understanding Test Results
-
-After running `npm test` you will see output like this:
-
-```
-✓ Auth › Admin can login with valid credentials (3.2s)
-✓ Auth › Login fails with wrong password (1.8s)
-✗ Premium Matrix › Upload valid matrix for 2026 (FAILED)
-```
-
-**Green ✓** = test passed — the feature is working correctly
-
-**Red ✗** = test failed — something is broken
-
-To see exactly what failed:
 ```bash
+# list matching stories only
+npm run generate:api -- --list
+
+# generate API specs for stories matching "usermanagement"
+npm run generate:api -- usermanagement
+
+# generate only one feature section from a multi-feature story
+npm run generate:api -- usermanagement --section "Add HR Employee"
+
+# generate UI specs (story filter optional)
+npm run generate:ui -- usermanagement
+```
+
+Important:
+
+- Prefer `generate:api` and `generate:ui` directly.
+- `generate` in `package.json` is a legacy alias path and may not represent the current wrapper entrypoint.
+
+## Where To Make Changes
+
+Use this decision map to avoid drift:
+
+- Change business/API behavior for one module -> edit `user-stories/*.md`.
+- Change generic generation quality/safety rule -> edit `agent/generate-api.ts` or `agent/generate-ui.ts`.
+- Change multi-step generation behavior (argument parsing, retries, section handling) -> edit `agent/generator-core.ts`.
+- Change execution/report orchestration -> edit `scripts/*.ps1`.
+- Avoid manually maintaining generated specs unless debugging a single run.
+
+## Test Execution
+
+```bash
+# default API run + auto-open latest Allure run
+npm test
+
+# API run + auto-open latest Allure run
+npm run test:api
+
+# only UI project
+npm run test:ui
+
+# run one or more API modules (module names map to story slugs)
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-api-and-open-allure.ps1 -Modules usermanagement
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/run-api-and-open-allure.ps1 -Modules @('usermanagement','lettersmanagement') -Label prepush-check
+```
+
+`playwright.config.ts` currently defines:
+
+- `ui` project -> `tests/ui`
+- `api` project -> `tests/api`
+- reporters: HTML, list, Allure, JSON
+
+## Reporting (Allure)
+
+Allure outputs are standardized:
+
+- Raw results: `artifacts/reports/allure/results/latest`
+- Latest generated report: `artifacts/reports/allure/latest`
+- Archived runs: `artifacts/reports/allure/runs/`
+- Per-run logs: `artifacts/reports/allure/logs/`
+- Run index: `artifacts/reports/allure/run-index.jsonl`
+- Latest run pointer: `.allure-latest`
+
+Commands:
+
+```bash
+# generate latest report and open it
 npm run report
+
+# same as report (latest only, no archive)
+npm run report:latest
+
+# generate + archive timestamped run + open latest archived
+npm run report:archive
+
+# open latest archived (or fallback latest)
+npm run allure:open:latest
+
+# list archived runs
+npm run allure:runs:list
+
+# open specific run id
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/allure-open-latest.ps1 -RunId "<run-id>"
 ```
 
-This opens a browser with screenshots, videos, and step-by-step details of every test.
+## One-Command API Cycle
 
----
+`api:cycle` runs generation + API tests + report generation/opening.
 
-## Understanding Passmark (How AI Controls the Browser)
-
-When you write a step like:
-
-```
-{ description: "Login with admin email and password" }
-```
-
-Passmark sends this to Claude (AI). Claude looks at the real browser screen, finds the email field and password field, types the credentials, and clicks Sign In — exactly like a human would.
-
-You never write CSS selectors or element IDs. You just describe what a human would do.
-
-**First run** — AI executes every step (takes 10–30 seconds per test)
-
-**Repeat runs** — steps are cached (runs in 2–3 seconds per test)
-
-**If the UI changes** — cached steps auto-heal by asking AI to find the new location
-
----
-
-## Work Division — 3 Interns
-
-| Intern | Features to own | User story files |
-|--------|----------------|-----------------|
-| **Intern 1** | Authentication + Member profile | `auth.md` |
-| **Intern 2** | Premium Matrix + Pay Period Matrix | `premium-matrix.md` |
-| **Intern 3** | Enrollment + Threads | `enrollment.md`, `threads.md` |
-
-Each intern:
-- Owns their user story files
-- Writes and updates them as features change
-- Runs `npm run generate` after every change
-- Is responsible for keeping their tests green
-
----
-
-## Adding a New Feature
-
-When a new feature is built on the portal:
-
-1. Create a new file in `user-stories/`
-   ```bash
-   touch user-stories/member-search.md
-   ```
-
-2. Write the user story following the format above
-
-3. Generate the test
-   ```bash
-   npm run generate:one member-search
-   ```
-
-4. Run to verify
-   ```bash
-   npm run test:headed
-   ```
-
-5. Commit only the user story file
-   ```bash
-   git add user-stories/member-search.md
-   git commit -m "add user story: member search"
-   git push
-   ```
-
-CI/CD will automatically generate the spec and run it on GitHub.
-
----
-
-## CI/CD — What Happens on GitHub
-
-Every time you push to the `main` branch or raise a PR:
-
-```
-Push / PR → GitHub Actions starts
-          → Installs Node + Playwright browsers
-          → npm run generate  (lints stories + generates UI specs)
-          → npm run test:api  (runs all API tests — fast, no browser)
-          → npm run test:ui   (runs all browser tests via Passmark)
-          → Publishes HTML report as downloadable artifact
-          → Posts test summary comment on PR (✅ passed / ❌ failed)
-          → Publishes Allure dashboard to GitHub Pages (main only)
-```
-
-- See CI runs: `https://github.com/Navitas-India/arb-automation/actions`
-- See Allure dashboard: `https://navitas-india.github.io/arb-automation`
-
-> ⚠️ Branch protection is enabled on `main`. You cannot push directly — you must raise a PR and get 1 approval. Tests must pass before merging.
-
----
-
-## Common Errors and Fixes
-
-### `ANTHROPIC_API_KEY not set`
-You forgot to create your `.env` file or the key is missing.
 ```bash
-cp .env.example .env
-# then fill in ANTHROPIC_API_KEY — ask your team lead
+# full story filter
+npm run api:cycle -- usermanagement
+
+# single spec execution after generation
+npm run api:cycle -- usermanagement tests/api/usermanagement/usermanagement-add-member-profile.api.spec.ts
 ```
 
-### `Cannot find module 'passmark'`
-Dependencies not installed.
+## Practical Run Recipes
+
 ```bash
-npm install
+# 1) Regenerate only one module section and test only that spec
+npm run generate:api -- usermanagement --section "Add HR Employee"
+npm run test:api -- tests/api/usermanagement/usermanagement-add-hr-employee.api.spec.ts
+npm run report
+
+# 2) Run existing API specs without regeneration (faster signal)
+npm run test:api
+npm run report:latest
+
+# 3) Full API cycle with archived run label
+npm run api:cycle -- usermanagement
+npm run report:archive
 ```
 
-### `Missing section: "## Negative Cases"`
-Your user story is missing a required section. The agent will not generate until fixed.
-Open the `.md` file and add the missing section — see the format above.
+## Story Authoring Guidance
 
-### `Timeout — waiting for element`
-The app is not running locally. Make sure backend (port 8085) and frontend (port 5173) are both started.
+For reliable generation quality, use the maintained docs:
 
-### `401 Unauthorised on all API tests`
-Test credentials are wrong or the session expired. Check `TEST_ADMIN_EMAIL` and `TEST_ADMIN_PASSWORD` in your `.env`.
+- `docs/guidelines-md-preparation.md`
+- `docs/guidelines-rule-placement.md`
 
-### `Error: net::ERR_CONNECTION_REFUSED`
-The app is not running. Start backend and frontend first.
+These capture:
 
-### PR is blocked — cannot merge
-Either tests are failing in CI or you need 1 reviewer approval. Fix the failing tests first, then ask your team lead to review.
+- how to structure module sections in markdown
+- what belongs in generator code vs story contracts
+- how to encode module-specific behavior using text-only `Generator Contract` sections
 
----
+## Troubleshooting Quick Map
 
-## Rules
+- `Missing required AI key` -> set `ANTHROPIC_API_KEY` or `GOOGLE_GENERATIVE_AI_API_KEY`.
+- `No sections matched --section` -> verify exact feature heading text in story file.
+- Test status mismatch failures (expected vs received HTTP code) -> update module contract compatibility set in story markdown first.
+- Report opens stale content -> clear old artifacts, run tests, then `npm run report:latest`.
+- API auth failures (`401` on all tests) -> verify `BACKEND_URL`, `TEST_ADMIN_EMAIL`, `TEST_ADMIN_PASSWORD`.
 
-1. **Never edit files in `tests/`** — they are auto-generated and will be overwritten
-2. **Never commit `.env`** — it contains secrets
-3. **One feature per user story file** — keep them focused
-4. **Always pull before you push** — `git pull origin main` first
-5. **Run tests before pushing** — make sure nothing is broken
+## CI Notes
 
----
+Workflow file: `.github/workflows/playwright.yml`
 
-## Need Help?
+- Runs on push (`main`, `develop`) and PR (`main`)
+- Installs dependencies and Playwright browser
+- Runs generation, API tests, UI tests
+- Uploads Playwright report and result artifacts
+- Posts PR test summary
+- Publishes Allure report to GitHub Pages on `main`
 
-- Tests failing? Run `npm run report` and look at the screenshot
-- Not sure how to write a user story? Look at the examples in `user-stories/`
-- Something broken in the setup? Ask your team lead
+## Operational Rules
 
----
-
-*ARBenefits Automation — Navitas India*
+- Do not commit secrets (`.env` is ignored).
+- Treat generated specs as generated artifacts; prefer updating story markdown and generator rules over manual patching generated files.
+- Keep module-specific API behavior in story markdown contracts, not hardcoded into generic generator logic.
+- Prefer working on integration branch flow (avoid direct `main` development commits).

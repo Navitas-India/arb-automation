@@ -1,5 +1,3 @@
-import { Page } from '@playwright/test';
-
 export const TEST_USERS = {
   admin: {
     email:    process.env.TEST_ADMIN_EMAIL    || 'murali.miriyala@navitastech.com',
@@ -7,13 +5,15 @@ export const TEST_USERS = {
   },
 };
 
+const sanitizeUrl = (value: string): string => value.trim().replace(/\/+$/, '');
+
 export const URLS = {
-  frontend: process.env.FRONTEND_URL || 'http://localhost:5173',
-  backend:  process.env.BACKEND_URL  || 'http://localhost:8085',
+  frontend: sanitizeUrl(process.env.FRONTEND_URL || 'http://localhost:5173'),
+  backend:  sanitizeUrl(process.env.BACKEND_URL  || 'http://localhost:8085'),
 };
 
 export async function getAuthToken(): Promise<string> {
-  const res = await fetch(`${URLS.backend}/api/admin-portal/auth/signin`, {
+  const res = await fetch(`${URLS.backend}/auth/signin`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({
@@ -22,7 +22,14 @@ export async function getAuthToken(): Promise<string> {
       accountType: 'E',
     }),
   });
-  const data = await res.json();
-  if (!data.accessToken) throw new Error('Failed to get auth token');
+  const data: unknown = await res.json();
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    !('accessToken' in data) ||
+    typeof data.accessToken !== 'string'
+  ) {
+    throw new Error('Failed to get auth token');
+  }
   return data.accessToken;
 }

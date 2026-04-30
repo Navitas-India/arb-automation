@@ -2,8 +2,7 @@ import { Page, expect } from '@playwright/test';
 
 /**
  * BasePage — shared helpers for all page objects.
- * Page objects are optional when using Passmark runSteps(),
- * but useful for pure Playwright API tests and shared utilities.
+ * Useful for pure Playwright UI tests and shared utilities.
  */
 export class BasePage {
   constructor(protected page: Page) {}

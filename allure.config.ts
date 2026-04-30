@@ -1,11 +1,13 @@
 // Allure is configured via playwright.config.ts reporter array.
 // This file documents the setup for reference.
 //
-// Results go to:  allure-results/
-// Report goes to: allure-report/
+// Results go to:  artifacts/reports/allure/results/latest
+// Latest report: artifacts/reports/allure/latest
+// Archived runs: artifacts/reports/allure/runs/<timestamp>_<suite>_<label>_<branch>
 //
 // Commands:
-//   npx allure generate allure-results --clean -o allure-report
-//   npx allure open allure-report
+//   npm run report:latest
+//   npm run report:archive
+//   npm run allure:open:latest
 
 export {};
